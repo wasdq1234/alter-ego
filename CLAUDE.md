@@ -32,6 +32,12 @@ cd backend && uv run pytest -k "test_create"       # 키워드로 필터
 cd frontend && npm run dev                         # 개발 서버 (port 5173)
 cd frontend && npm run build                       # 프로덕션 빌드
 cd frontend && npm run lint                        # ESLint
+
+# E2E Test (Playwright)
+cd frontend && npx playwright test                 # 전체 E2E 테스트
+cd frontend && npx playwright test e2e/auth.spec.ts  # 단일 파일
+cd frontend && npx playwright test --ui            # UI 모드
+cd frontend && npx playwright test --reporter=list # 상세 출력
 ```
 
 ## Workflow Rules
