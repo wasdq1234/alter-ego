@@ -1,1 +1,22 @@
-// 타입 정의 (이후 태스크에서 구현)
+export interface Persona {
+  id: string
+  user_id: string
+  name: string
+  personality: string
+  speaking_style: string
+  background: string | null
+  system_prompt: string | null
+  created_at: string
+}
+
+export interface ChatMessage {
+  id?: string
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface StreamMessage {
+  type: 'stream' | 'error'
+  content: string
+  done?: boolean
+}
