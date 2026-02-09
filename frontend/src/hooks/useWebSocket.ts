@@ -52,7 +52,11 @@ export function useWebSocket(token: string | undefined) {
       }
 
       ws.onclose = () => {
-        wsRef.current = null
+        // Only clear ref if this is still the active WebSocket
+        // (StrictMode remount can cause stale onclose to fire after new WS is assigned)
+        if (wsRef.current === ws) {
+          wsRef.current = null
+        }
       }
 
       wsRef.current = ws
