@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Auth flow', () => {
-  test.use({ storageState: { cookies: [], origins: [] } }) // no saved auth
+  test.use({ storageState: { cookies: [], origins: [] } })
 
   test('shows login form by default', async ({ page }) => {
     await page.goto('/')
@@ -44,9 +44,14 @@ test.describe('Auth flow', () => {
 })
 
 test.describe('Authenticated user', () => {
-  // Uses saved auth from setup project
-
   test('can sign out', async ({ page }) => {
+    // Intercept Supabase logout API to prevent server-side token revocation.
+    // Uses URL predicate (not glob) to match requests with query params like ?scope=global.
+    await page.route(
+      (url) => url.pathname.includes('/auth/v1/logout'),
+      (route) => route.fulfill({ status: 204, body: '' }),
+    )
+
     await page.goto('/')
     await expect(page.getByRole('heading', { name: 'My Personas' })).toBeVisible({
       timeout: 10_000,
