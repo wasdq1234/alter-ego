@@ -23,6 +23,11 @@ cd backend && uv run uvicorn main:app --reload    # 개발 서버 (port 8000)
 cd backend && uv add <package>                     # 의존성 추가
 cd backend && uv sync                              # 의존성 설치
 
+# Test
+cd backend && uv run pytest tests/ -v              # 전체 테스트
+cd backend && uv run pytest tests/test_persona.py  # 단일 파일
+cd backend && uv run pytest -k "test_create"       # 키워드로 필터
+
 # Frontend
 cd frontend && npm run dev                         # 개발 서버 (port 5173)
 cd frontend && npm run build                       # 프로덕션 빌드
@@ -40,7 +45,7 @@ cd frontend && npm run lint                        # ESLint
 
 - **기능 개발 시 반드시 새 브랜치를 생성**하고 작업. 워크트리 방식을 따름.
 - 브랜치 네이밍: `feature/<task-number>-<short-description>` (예: `feature/3-auth-jwt`)
-- **테스트가 완료된 후에만 `main`에 머지**. 테스트 미완료 상태에서 머지 금지.
+- **`uv run pytest`가 전부 통과한 후에만 `main`에 머지**. 테스트 미완료 상태에서 머지 금지.
 - 머지 전 PR 생성하여 변경 내용 문서화.
 
 ```bash
@@ -53,7 +58,7 @@ gh pr create                                           # PR 생성
 
 ## Environment Variables
 
-Backend(`.env`): `SUPABASE_URL`, `SUPABASE_KEY`, `OPENAI_API_KEY`
+Backend(`.env`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`
 Frontend(`.env`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
 
 ## Documentation Reference (Context7)

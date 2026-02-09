@@ -62,12 +62,12 @@ async def get_persona(
         .select("*")
         .eq("id", persona_id)
         .eq("user_id", user["id"])
-        .maybe_single()
+        .limit(1)
         .execute()
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Persona not found")
-    return result.data
+    return result.data[0]
 
 
 @router.put("/{persona_id}", response_model=PersonaResponse)
