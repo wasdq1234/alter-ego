@@ -7,6 +7,7 @@ from api.chat import router as chat_router
 from api.image import router as image_router
 from api.sns import router as sns_router
 from api.follow import router as follow_router
+from api.lora import router as lora_router
 
 load_dotenv()
 
@@ -25,6 +26,7 @@ app.include_router(chat_router)
 app.include_router(image_router)
 app.include_router(sns_router)
 app.include_router(follow_router)
+app.include_router(lora_router)
 
 
 @app.get("/health")

@@ -15,17 +15,18 @@ export function ManagerPage({ token }: ManagerPageProps) {
   const [view, setView] = useState<View>('list')
   const [personas, setPersonas] = useState<Persona[]>([])
   const [activePersona, setActivePersona] = useState<Persona | null>(null)
-  const [loadingPersonas, setLoadingPersonas] = useState(false)
+  const [loadingPersonas, setLoadingPersonas] = useState(true)
 
   useEffect(() => {
-    setLoadingPersonas(true)
+    let cancelled = false
     const apiUrl = import.meta.env.VITE_API_URL || ''
     fetch(`${apiUrl}/api/persona`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setPersonas(data))
-      .finally(() => setLoadingPersonas(false))
+      .then((data) => { if (!cancelled) setPersonas(data) })
+      .finally(() => { if (!cancelled) setLoadingPersonas(false) })
+    return () => { cancelled = true }
   }, [token])
 
   const handleDelete = async (persona: Persona) => {

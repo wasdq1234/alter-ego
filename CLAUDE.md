@@ -64,7 +64,7 @@ gh pr create                                           # PR 생성
 
 ## Environment Variables
 
-Backend(`.env`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`
+Backend(`.env`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `REPLICATE_API_TOKEN`
 Frontend(`.env`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
 
 ## Documentation Reference (Context7)

@@ -8,6 +8,9 @@ export interface Persona {
   system_prompt: string | null
   created_at: string
   profile_image_url?: string | null
+  lora_model_id?: string | null
+  lora_trigger_word?: string | null
+  lora_status?: 'pending' | 'training' | 'ready' | 'failed' | null
 }
 
 export interface PersonaImage {

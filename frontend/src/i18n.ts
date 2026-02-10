@@ -83,6 +83,21 @@ const ko = {
   'sns.noComments': '아직 댓글이 없습니다.',
   'sns.reply': '답글',
 
+  // LoRA
+  'lora.title': 'LoRA 학습',
+  'lora.statusLabel': '학습 상태',
+  'lora.statusPending': '대기',
+  'lora.statusTraining': '학습 중',
+  'lora.statusReady': '준비 완료',
+  'lora.statusFailed': '실패',
+  'lora.startTraining': 'LoRA 학습 시작',
+  'lora.training': '학습 진행 중...',
+  'lora.needImages': '학습을 시작하려면 최소 3장의 이미지가 필요합니다.',
+  'lora.trainError': 'LoRA 학습 시작에 실패했습니다',
+  'lora.trainSuccess': 'LoRA 학습이 완료되었습니다!',
+  'lora.triggerWord': '트리거 워드',
+  'lora.modelId': '모델 ID',
+
   // Common
   'common.loading': '로딩 중...',
 } as const
@@ -171,6 +186,21 @@ const en: Record<keyof typeof ko, string> = {
   'sns.back': 'Back',
   'sns.noComments': 'No comments yet.',
   'sns.reply': 'Reply',
+
+  // LoRA
+  'lora.title': 'LoRA Training',
+  'lora.statusLabel': 'Training Status',
+  'lora.statusPending': 'Pending',
+  'lora.statusTraining': 'Training',
+  'lora.statusReady': 'Ready',
+  'lora.statusFailed': 'Failed',
+  'lora.startTraining': 'Start LoRA Training',
+  'lora.training': 'Training in progress...',
+  'lora.needImages': 'At least 3 images are required to start training.',
+  'lora.trainError': 'Failed to start LoRA training',
+  'lora.trainSuccess': 'LoRA training completed!',
+  'lora.triggerWord': 'Trigger Word',
+  'lora.modelId': 'Model ID',
 
   // Common
   'common.loading': 'Loading...',
