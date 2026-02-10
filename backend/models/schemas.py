@@ -113,3 +113,33 @@ class PersonaProfileResponse(BaseModel):
     post_count: int = 0
     follower_count: int = 0
     following_count: int = 0
+
+
+# --- Schedule Schemas ---
+
+
+class ScheduleCreate(BaseModel):
+    schedule_type: str  # 'cron' | 'interval'
+    schedule_value: str  # cron: "0 10 * * *", interval: "3h"
+    activity_type: str  # 'post' | 'react' | 'free'
+    activity_prompt: str | None = None
+
+
+class ScheduleUpdate(BaseModel):
+    schedule_type: str | None = None
+    schedule_value: str | None = None
+    activity_type: str | None = None
+    activity_prompt: str | None = None
+    is_active: bool | None = None
+
+
+class ScheduleResponse(BaseModel):
+    id: str
+    persona_id: str
+    user_id: str
+    schedule_type: str
+    schedule_value: str
+    activity_type: str
+    activity_prompt: str | None
+    is_active: bool
+    created_at: str

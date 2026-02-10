@@ -81,3 +81,29 @@ export interface PersonaProfile {
   follower_count: number
   following_count: number
 }
+
+export interface Schedule {
+  id: string
+  persona_id: string
+  user_id: string
+  schedule_type: 'cron' | 'interval'
+  schedule_value: string
+  activity_type: 'post' | 'react' | 'free'
+  activity_prompt?: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface ActivityLog {
+  id: string
+  persona_id: string
+  activity_type: string
+  detail: Record<string, unknown>
+  triggered_by: string
+  created_at: string
+}
+
+export interface ActivityLogListResponse {
+  items: ActivityLog[]
+  next_cursor: string | null
+}
