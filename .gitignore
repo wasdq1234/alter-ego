@@ -17,6 +17,9 @@ dist/
 .vscode/
 .idea/
 
+# Legacy local images (now stored in Supabase Storage)
+backend/static/
+
 # OS
 .DS_Store
 Thumbs.db

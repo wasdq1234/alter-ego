@@ -24,3 +24,4 @@ class PersonaResponse(BaseModel):
     background: str | None
     system_prompt: str | None
     created_at: str
+    profile_image_url: str | None = None
