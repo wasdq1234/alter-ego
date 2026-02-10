@@ -73,10 +73,49 @@ Frontend(`.env`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
 - `resolve-library-id` → `query-docs` 순서로 호출하여 라이브러리별 최신 API/패턴 참조.
 - 주요 라이브러리 ID:
   - LangGraph: `/langchain-ai/langgraph`
+  - LangChain: `/langchain-ai/langchain`
   - FastAPI: `/websites/fastapi_tiangolo`
   - Supabase Python: `/websites/supabase_reference_python`
   - Supabase (전체): `/websites/supabase`
   - React: `/facebook/react`
+
+## Team Skills & Agents (팀 스킬 & 에이전트)
+
+팀 작업 시 `.claude/skills/`(공통 규칙)과 `.claude/agents/`(역할별 전문성)을 조합하여 사용한다.
+
+### Skills (공통 규칙 — 모든 팀원이 공유)
+
+| 파일 | 내용 |
+|------|------|
+| `skills/context7-usage.md` | Context7 MCP 사용 규칙, 라이브러리 ID 목록 |
+| `skills/coding-conventions.md` | 코딩 컨벤션, 네이밍, 알려진 함정 |
+| `skills/supabase-patterns.md` | Supabase 쿼리 패턴, RLS 규칙, DB 스키마 |
+| `skills/testing-rules.md` | pytest/Playwright 실행법, QA 체크리스트 |
+
+### Agents (역할별 전문성)
+
+| 파일 | 역할 | 사용 Skills | 특수 사항 |
+|------|------|------------|-----------|
+| `agents/db-engineer.md` | DB 엔지니어 | context7-usage, supabase-patterns | Supabase MCP 도구 접근 |
+| `agents/backend-dev.md` | 백엔드 개발자 | context7-usage, coding-conventions, supabase-patterns | — |
+| `agents/langgraph-dev.md` | LangGraph 개발자 | context7-usage, coding-conventions, supabase-patterns | opus 모델 |
+| `agents/frontend-dev.md` | 프론트엔드 개발자 | context7-usage, coding-conventions | — |
+| `agents/test-engineer.md` | 테스트 엔지니어 | context7-usage, testing-rules, coding-conventions | — |
+
+### 팀원 spawn 규칙
+팀원을 `Task` 도구로 spawn할 때:
+```
+1. Read(".claude/agents/<agent-name>.md") — 에이전트 정의 읽기
+2. Read(".claude/skills/<skill>.md") — 해당 에이전트의 skills 읽기
+3. Task(subagent_type="general-purpose", prompt=<에이전트 정의 + skills 내용 + 작업 지시>) 로 spawn
+```
+
+### 팀 운영 흐름
+1. `TeamCreate`로 팀 생성
+2. `TaskCreate`로 작업 정의 (의존관계 포함)
+3. 에이전트 파일 + skills 파일을 읽고 prompt에 포함하여 팀원 spawn
+4. 팀원은 작업 완료 후 `TaskUpdate`로 상태 변경
+5. 모든 작업 완료 후 `test-engineer`로 QA 수행
 
 ## Key Conventions
 
