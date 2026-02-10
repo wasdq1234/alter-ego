@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../hooks/useI18n'
 
 interface AuthFormProps {
   onSignIn: (email: string, password: string) => Promise<void>
@@ -6,6 +7,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ onSignIn, onSignUp }: AuthFormProps) {
+  const { t } = useI18n()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,10 +23,10 @@ export function AuthForm({ onSignIn, onSignUp }: AuthFormProps) {
         await onSignIn(email, password)
       } else {
         await onSignUp(email, password)
-        setError('Check your email to confirm your account.')
+        setError(t('auth.checkEmail'))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : t('auth.error'))
     } finally {
       setLoading(false)
     }
@@ -37,13 +39,13 @@ export function AuthForm({ onSignIn, onSignUp }: AuthFormProps) {
           Alter Ego
         </h1>
         <p className="text-sm text-center text-gray-500 mb-6">
-          {isLogin ? 'Sign in to your account' : 'Create a new account'}
+          {isLogin ? t('auth.signInDesc') : t('auth.signUpDesc')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('auth.email')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -51,7 +53,7 @@ export function AuthForm({ onSignIn, onSignUp }: AuthFormProps) {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t('auth.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -68,17 +70,17 @@ export function AuthForm({ onSignIn, onSignUp }: AuthFormProps) {
             disabled={loading}
             className="w-full py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? '...' : isLogin ? 'Sign In' : 'Sign Up'}
+            {loading ? '...' : isLogin ? t('auth.signIn') : t('auth.signUp')}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+          {isLogin ? t('auth.noAccount') : t('auth.hasAccount')}{' '}
           <button
             onClick={() => { setIsLogin(!isLogin); setError('') }}
             className="text-blue-600 hover:underline"
           >
-            {isLogin ? 'Sign Up' : 'Sign In'}
+            {isLogin ? t('auth.signUp') : t('auth.signIn')}
           </button>
         </p>
       </div>

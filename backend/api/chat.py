@@ -1,11 +1,52 @@
 import json
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 
+from api.deps import get_current_user
 from core.supabase_client import get_supabase
 from core.graph import stream_chat
 
 router = APIRouter(tags=["chat"])
+
+
+class ThreadCreate(BaseModel):
+    persona_id: str
+
+
+class ThreadResponse(BaseModel):
+    id: str
+    persona_id: str
+
+
+@router.post("/api/chat/thread", response_model=ThreadResponse, status_code=201)
+async def create_thread(
+    body: ThreadCreate,
+    user: dict = Depends(get_current_user),
+):
+    """채팅 스레드 생성. persona_id를 받아 chat_threads row를 만들고 thread ID 반환."""
+    sb = get_supabase()
+
+    # 페르소나 소유권 확인
+    persona = (
+        sb.table("personas")
+        .select("id")
+        .eq("id", body.persona_id)
+        .eq("user_id", user["id"])
+        .limit(1)
+        .execute()
+    )
+    if not persona.data:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Persona not found")
+
+    result = sb.table("chat_threads").insert({
+        "user_id": user["id"],
+        "persona_id": body.persona_id,
+        "title": "Chat",
+    }).execute()
+
+    return result.data[0]
 
 
 async def _authenticate_ws(websocket: WebSocket) -> dict | None:
@@ -50,7 +91,7 @@ async def websocket_chat(websocket: WebSocket, thread_id: str):
                 .select("system_prompt")
                 .eq("id", persona_id)
                 .eq("user_id", user["id"])
-                .maybe_single()
+                .limit(1)
                 .execute()
             )
             if not persona.data:
@@ -67,28 +108,33 @@ async def websocket_chat(websocket: WebSocket, thread_id: str):
             }).execute()
 
             # LangGraph 스트리밍 응답
-            full_response = ""
-            async for chunk in stream_chat(
-                system_prompt=persona.data["system_prompt"],
-                user_message=content,
-                thread_id=thread_id,
-            ):
-                full_response += chunk
+            try:
+                full_response = ""
+                async for chunk in stream_chat(
+                    system_prompt=persona.data[0]["system_prompt"],
+                    user_message=content,
+                    thread_id=thread_id,
+                ):
+                    full_response += chunk
+                    await websocket.send_text(
+                        json.dumps({"type": "stream", "content": chunk, "done": False})
+                    )
+
+                # 완료 신호
                 await websocket.send_text(
-                    json.dumps({"type": "stream", "content": chunk, "done": False})
+                    json.dumps({"type": "stream", "content": "", "done": True})
                 )
 
-            # 완료 신호
-            await websocket.send_text(
-                json.dumps({"type": "stream", "content": "", "done": True})
-            )
-
-            # 어시스턴트 응답 DB 저장
-            sb.table("chat_messages").insert({
-                "thread_id": thread_id,
-                "role": "assistant",
-                "content": full_response,
-            }).execute()
+                # 어시스턴트 응답 DB 저장
+                sb.table("chat_messages").insert({
+                    "thread_id": thread_id,
+                    "role": "assistant",
+                    "content": full_response,
+                }).execute()
+            except Exception as e:
+                await websocket.send_text(
+                    json.dumps({"type": "error", "content": f"LLM error: {str(e)}"})
+                )
 
     except WebSocketDisconnect:
         pass

@@ -1,17 +1,21 @@
 import { useState } from 'react'
+import { useI18n } from '../hooks/useI18n'
 import type { Persona } from '../types'
 
 interface PersonaFormProps {
   token: string
-  onCreated: (persona: Persona) => void
+  persona?: Persona
+  onSaved: (persona: Persona) => void
   onCancel: () => void
 }
 
-export function PersonaForm({ token, onCreated, onCancel }: PersonaFormProps) {
-  const [name, setName] = useState('')
-  const [personality, setPersonality] = useState('')
-  const [speakingStyle, setSpeakingStyle] = useState('')
-  const [background, setBackground] = useState('')
+export function PersonaForm({ token, persona, onSaved, onCancel }: PersonaFormProps) {
+  const { t } = useI18n()
+  const isEdit = !!persona
+  const [name, setName] = useState(persona?.name ?? '')
+  const [personality, setPersonality] = useState(persona?.personality ?? '')
+  const [speakingStyle, setSpeakingStyle] = useState(persona?.speaking_style ?? '')
+  const [background, setBackground] = useState(persona?.background ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -21,8 +25,11 @@ export function PersonaForm({ token, onCreated, onCancel }: PersonaFormProps) {
     setError('')
     try {
       const apiUrl = import.meta.env.VITE_API_URL || ''
-      const res = await fetch(`${apiUrl}/api/persona`, {
-        method: 'POST',
+      const url = isEdit
+        ? `${apiUrl}/api/persona/${persona.id}`
+        : `${apiUrl}/api/persona`
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -34,11 +41,11 @@ export function PersonaForm({ token, onCreated, onCancel }: PersonaFormProps) {
           background: background || null,
         }),
       })
-      if (!res.ok) throw new Error('Failed to create persona')
-      const persona: Persona = await res.json()
-      onCreated(persona)
+      if (!res.ok) throw new Error(isEdit ? t('form.updateError') : t('form.createError'))
+      const saved: Persona = await res.json()
+      onSaved(saved)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error occurred')
+      setError(err instanceof Error ? err.message : t('form.error'))
     } finally {
       setLoading(false)
     }
@@ -46,47 +53,49 @@ export function PersonaForm({ token, onCreated, onCancel }: PersonaFormProps) {
 
   return (
     <div className="max-w-md mx-auto p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Create Persona</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">
+        {isEdit ? t('form.editTitle') : t('form.createTitle')}
+      </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.name')}</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            placeholder="e.g. Luna"
+            placeholder={t('form.namePlaceholder')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Personality</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.personality')}</label>
           <textarea
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}
             required
-            placeholder="e.g. Bright and positive, humorous"
+            placeholder={t('form.personalityPlaceholder')}
             rows={2}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Speaking Style</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.speakingStyle')}</label>
           <textarea
             value={speakingStyle}
             onChange={(e) => setSpeakingStyle(e.target.value)}
             required
-            placeholder="e.g. Casual tone, uses emojis often"
+            placeholder={t('form.speakingStylePlaceholder')}
             rows={2}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Background (optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.background')}</label>
           <textarea
             value={background}
             onChange={(e) => setBackground(e.target.value)}
-            placeholder="e.g. 25 years old, lives in Seoul, loves music"
+            placeholder={t('form.backgroundPlaceholder')}
             rows={2}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -100,14 +109,16 @@ export function PersonaForm({ token, onCreated, onCancel }: PersonaFormProps) {
             disabled={loading}
             className="flex-1 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Creating...' : 'Create'}
+            {loading
+              ? (isEdit ? t('form.saving') : t('form.creating'))
+              : (isEdit ? t('form.save') : t('form.create'))}
           </button>
           <button
             type="button"
             onClick={onCancel}
             className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
           >
-            Cancel
+            {t('form.cancel')}
           </button>
         </div>
       </form>

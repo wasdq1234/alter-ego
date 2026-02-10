@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from api.deps import get_current_user
 from core.supabase_client import get_supabase
@@ -84,7 +84,7 @@ async def update_persona(
         .select("*")
         .eq("id", persona_id)
         .eq("user_id", user["id"])
-        .maybe_single()
+        .limit(1)
         .execute()
     )
     if not existing.data:
@@ -92,10 +92,10 @@ async def update_persona(
 
     updates = body.model_dump(exclude_none=True)
     if not updates:
-        return existing.data
+        return existing.data[0]
 
     # 변경된 필드를 기존 데이터에 병합 후 system_prompt 재생성
-    merged = {**existing.data, **updates}
+    merged = {**existing.data[0], **updates}
     updates["system_prompt"] = _build_system_prompt(merged)
 
     result = (
@@ -105,3 +105,26 @@ async def update_persona(
         .execute()
     )
     return result.data[0]
+
+
+@router.delete("/{persona_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_persona(
+    persona_id: str,
+    user: dict = Depends(get_current_user),
+):
+    sb = get_supabase()
+
+    # 소유권 확인
+    existing = (
+        sb.table("personas")
+        .select("id")
+        .eq("id", persona_id)
+        .eq("user_id", user["id"])
+        .limit(1)
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Persona not found")
+
+    sb.table("personas").delete().eq("id", persona_id).execute()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -57,6 +57,31 @@ def test_update_persona(client, auth_headers, created_persona):
     assert "updated-bot" in resp.json()["system_prompt"]
 
 
+def test_delete_persona(client, auth_headers, persona_data):
+    """페르소나 삭제 후 조회 시 404."""
+    # 생성
+    resp = client.post("/api/persona", json=persona_data, headers=auth_headers)
+    assert resp.status_code == 201
+    persona_id = resp.json()["id"]
+
+    # 삭제
+    resp = client.delete(f"/api/persona/{persona_id}", headers=auth_headers)
+    assert resp.status_code == 204
+
+    # 삭제 후 조회 → 404
+    resp = client.get(f"/api/persona/{persona_id}", headers=auth_headers)
+    assert resp.status_code == 404
+
+
+def test_delete_nonexistent_persona(client, auth_headers):
+    """존재하지 않는 페르소나 삭제 → 404."""
+    resp = client.delete(
+        "/api/persona/00000000-0000-0000-0000-000000000000",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+
+
 def test_get_nonexistent_persona(client, auth_headers):
     """존재하지 않는 페르소나 → 404."""
     resp = client.get(

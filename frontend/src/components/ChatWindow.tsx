@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MessageBubble } from './MessageBubble'
 import { useWebSocket } from '../hooks/useWebSocket'
+import { useI18n } from '../hooks/useI18n'
 import type { Persona } from '../types'
 
 interface ChatWindowProps {
@@ -10,16 +11,44 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
+  const { t } = useI18n()
   const [input, setInput] = useState('')
-  const threadId = useRef(`${persona.id}-${Date.now()}`).current
+  const [threadId, setThreadId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const { messages, isStreaming, connect, sendMessage, disconnect } =
     useWebSocket(token)
 
   useEffect(() => {
-    connect(threadId)
-    return () => disconnect()
-  }, [connect, disconnect, threadId])
+    let cancelled = false
+
+    async function initThread() {
+      try {
+        const res = await fetch('/api/chat/thread', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ persona_id: persona.id }),
+        })
+        if (!res.ok) throw new Error('Failed to create thread')
+        const data = await res.json()
+        if (!cancelled) {
+          await connect(data.id)
+          if (!cancelled) setThreadId(data.id)
+        }
+      } catch (err) {
+        console.error('Thread creation failed:', err)
+      }
+    }
+
+    initThread()
+    return () => {
+      cancelled = true
+      disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persona.id, token])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -27,7 +56,7 @@ export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
 
   const handleSend = () => {
     const text = input.trim()
-    if (!text || isStreaming) return
+    if (!text || isStreaming || !threadId) return
     sendMessage(text, persona.id)
     setInput('')
   }
@@ -61,15 +90,16 @@ export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            placeholder="Type a message..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder={threadId ? t('chat.placeholder') : t('chat.connecting')}
+            disabled={!threadId}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
-            disabled={isStreaming || !input.trim()}
+            disabled={isStreaming || !input.trim() || !threadId}
             className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
           >
-            Send
+            {t('chat.send')}
           </button>
         </div>
       </div>

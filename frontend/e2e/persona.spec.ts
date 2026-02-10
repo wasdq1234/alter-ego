@@ -62,4 +62,72 @@ test.describe('Persona management', () => {
 
     await expect(page.getByRole('heading', { name: 'My Personas' })).toBeVisible()
   })
+
+  test('can edit a persona', async ({ page }) => {
+    const personaName = `pw-edit-${Date.now()}`
+    const updatedName = `pw-edited-${Date.now()}`
+
+    await loginAndWaitForList(page)
+
+    // Create a persona first
+    await page.getByText('+ New Persona').click()
+    await page.getByPlaceholder('e.g. Luna').fill(personaName)
+    await page.getByPlaceholder('Bright and positive').fill('Test personality')
+    await page.getByPlaceholder('Casual tone').fill('Test style')
+    await page.getByRole('button', { name: 'Create' }).click()
+
+    await expect(page.getByRole('heading', { name: 'My Personas' })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByText(personaName)).toBeVisible()
+
+    // Click Edit on the newly created persona's card
+    const card = page.locator('.grid > div').filter({ hasText: personaName })
+    await card.getByRole('button', { name: 'Edit' }).click()
+
+    // Should show edit form with existing values
+    await expect(page.getByRole('heading', { name: 'Edit Persona' })).toBeVisible()
+    const nameInput = page.getByPlaceholder('e.g. Luna')
+    await expect(nameInput).toHaveValue(personaName)
+
+    // Change the name
+    await nameInput.clear()
+    await nameInput.fill(updatedName)
+    await page.getByRole('button', { name: 'Save' }).click()
+
+    // Should return to list with updated name
+    await expect(page.getByRole('heading', { name: 'My Personas' })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByText(updatedName)).toBeVisible()
+    await expect(page.getByText(personaName)).not.toBeVisible()
+  })
+
+  test('can delete a persona', async ({ page }) => {
+    const personaName = `pw-delete-${Date.now()}`
+
+    await loginAndWaitForList(page)
+
+    // Create a persona first
+    await page.getByText('+ New Persona').click()
+    await page.getByPlaceholder('e.g. Luna').fill(personaName)
+    await page.getByPlaceholder('Bright and positive').fill('Test personality')
+    await page.getByPlaceholder('Casual tone').fill('Test style')
+    await page.getByRole('button', { name: 'Create' }).click()
+
+    await expect(page.getByRole('heading', { name: 'My Personas' })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByText(personaName)).toBeVisible()
+
+    // Accept the confirmation dialog
+    page.on('dialog', (dialog) => dialog.accept())
+
+    // Click Delete on the persona's card
+    const card = page.locator('.grid > div').filter({ hasText: personaName })
+    await card.getByRole('button', { name: 'Delete' }).click()
+
+    // Persona should be removed from the list
+    await expect(page.getByText(personaName)).not.toBeVisible({ timeout: 5_000 })
+  })
 })

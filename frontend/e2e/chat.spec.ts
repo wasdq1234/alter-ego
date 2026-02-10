@@ -24,7 +24,7 @@ test.describe('Chat', () => {
     await expect(chatButton).toBeVisible({ timeout: 10_000 })
     await chatButton.click()
 
-    await expect(page.getByPlaceholder('Type a message...')).toBeVisible()
+    await expect(page.getByPlaceholder('Type a message...')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Send' })).toBeVisible()
   })
 
@@ -34,7 +34,7 @@ test.describe('Chat', () => {
     const chatButton = page.getByRole('button', { name: 'Chat' }).first()
     await expect(chatButton).toBeVisible({ timeout: 10_000 })
     await chatButton.click()
-    await expect(page.getByPlaceholder('Type a message...')).toBeVisible()
+    await expect(page.getByPlaceholder('Type a message...')).toBeVisible({ timeout: 10_000 })
 
     await page.locator('header button').first().click()
 
@@ -49,21 +49,18 @@ test.describe('Chat', () => {
     const chatButton = page.getByRole('button', { name: 'Chat' }).first()
     await expect(chatButton).toBeVisible({ timeout: 10_000 })
     await chatButton.click()
-    await expect(page.getByPlaceholder('Type a message...')).toBeVisible()
 
-    // Wait for WebSocket connection to establish (StrictMode causes reconnect)
-    await page.waitForTimeout(1500)
+    // Wait for thread creation and WebSocket connection
+    await expect(page.getByPlaceholder('Type a message...')).toBeVisible({ timeout: 10_000 })
 
     await page.getByPlaceholder('Type a message...').fill('Say hi')
     await page.getByRole('button', { name: 'Send' }).click()
 
-    // User message should appear (blue bubble)
+    // User message should appear
     await expect(page.getByText('Say hi')).toBeVisible({ timeout: 5_000 })
 
-    // Backend will fail on DB insert (thread_id not in chat_threads table).
-    // This is a known app issue: ChatWindow generates a local threadId instead
-    // of creating a chat_threads row first. For now, verify the user message
-    // was sent and the Send button reflects streaming state.
-    await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled()
+    // Wait for non-empty assistant response bubble
+    const assistantBubble = page.locator('.justify-start .rounded-lg')
+    await expect(assistantBubble.first()).toContainText(/.+/, { timeout: 30_000 })
   })
 })
