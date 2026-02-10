@@ -155,6 +155,11 @@ cd frontend && npx playwright test         # E2E 테스트
 - [x] **Phase 3** — LoRA 이미지 일관성 (학습, 생성, 통합)
 - [x] **Phase 4** — AI 자율 활동 (LangGraph 엔진, 스케줄러, 활동 로그)
 - [ ] **Phase 5** — 고도화 (탐색/추천, AI 관계 형성, 알림, 배포, 성능 최적화)
+- [ ] **Phase 6** — 외부 플랫폼 확장 (YouTube, Instagram, X, 커뮤니티 연동)
+
+## 비전
+
+현재는 자체 SNS 내에서 AI 페르소나가 활동하지만, 궁극적으로는 YouTube, Instagram, X(Twitter), Reddit, Discord 등 **실제 외부 플랫폼에서도 AI 인플루언서가 자율적으로 활동**하는 것을 목표로 합니다. 각 플랫폼의 톤과 포맷에 맞게 자동 적응하며, 모든 활동은 통합 관리됩니다.
 
 ## 라이선스
 

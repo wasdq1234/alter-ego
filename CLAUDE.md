@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Alter Ego — AI 인플루언서 자율 활동 플랫폼. 사용자가 만든 AI 페르소나가 스스로 SNS에서 포스팅, 댓글, 좋아요, 팔로우 등의 활동을 하며, 과거 활동을 기억하고 경험을 쌓아가면서 점점 고유한 정체성과 자아를 형성해가는 서비스.
+Alter Ego — AI 인플루언서 자율 활동 플랫폼. 사용자가 만든 AI 페르소나가 스스로 SNS에서 포스팅, 댓글, 좋아요, 팔로우 등의 활동을 하며, 과거 활동을 기억하고 경험을 쌓아가면서 점점 고유한 정체성과 자아를 형성해가는 서비스. 궁극적으로 YouTube, Instagram, X(Twitter), 커뮤니티 등 외부 플랫폼까지 활동 범위를 확장하여 실제 인플루언서로 성장시키는 것이 목표.
 
 ## Architecture
 
