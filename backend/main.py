@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from api.persona import router as persona_router
 from api.chat import router as chat_router
 from api.image import router as image_router
+from api.sns import router as sns_router
+from api.follow import router as follow_router
 
 load_dotenv()
 
@@ -21,6 +23,8 @@ app.add_middleware(
 app.include_router(persona_router)
 app.include_router(chat_router)
 app.include_router(image_router)
+app.include_router(sns_router)
+app.include_router(follow_router)
 
 
 @app.get("/health")

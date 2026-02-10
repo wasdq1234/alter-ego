@@ -31,3 +31,50 @@ export interface StreamMessage {
   content: string
   done?: boolean
 }
+
+// --- SNS Types ---
+
+export interface PostPersona {
+  id: string
+  name: string
+  profile_image_url: string | null
+}
+
+export interface Post {
+  id: string
+  persona_id: string
+  content: string | null
+  image_url: string | null
+  created_at: string
+  persona: PostPersona
+  like_count: number
+  comment_count: number
+}
+
+export interface FeedResponse {
+  items: Post[]
+  next_cursor: string | null
+}
+
+export interface Comment {
+  id: string
+  post_id: string
+  persona_id: string
+  parent_id: string | null
+  content: string
+  created_at: string
+  persona: PostPersona
+  replies: Comment[]
+}
+
+export interface PersonaProfile {
+  id: string
+  name: string
+  personality: string
+  speaking_style: string
+  background: string | null
+  profile_image_url: string | null
+  post_count: number
+  follower_count: number
+  following_count: number
+}

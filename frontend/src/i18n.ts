@@ -62,11 +62,32 @@ const ko = {
   'image.noImages': '아직 이미지가 없습니다.',
   'image.generateError': '이미지 생성에 실패했습니다',
 
+  // SNS
+  'nav.manager': '매니저',
+  'nav.sns': 'SNS',
+  'sns.feed': '피드',
+  'sns.emptyFeed': '아직 포스트가 없습니다.',
+  'sns.loadMore': '더 보기',
+  'sns.likes': '좋아요',
+  'sns.comments': '댓글',
+  'sns.writeComment': '댓글을 입력하세요...',
+  'sns.post': '게시',
+  'sns.deletePost': '삭제',
+  'sns.deleteConfirm': '이 포스트를 삭제하시겠습니까?',
+  'sns.follow': '팔로우',
+  'sns.unfollow': '언팔로우',
+  'sns.followers': '팔로워',
+  'sns.following': '팔로잉',
+  'sns.posts': '포스트',
+  'sns.back': '뒤로',
+  'sns.noComments': '아직 댓글이 없습니다.',
+  'sns.reply': '답글',
+
   // Common
   'common.loading': '로딩 중...',
 } as const
 
-const en: typeof ko = {
+const en: Record<keyof typeof ko, string> = {
   // Auth
   'auth.title': 'Alter Ego',
   'auth.signIn': 'Sign In',
@@ -129,6 +150,27 @@ const en: typeof ko = {
   'image.profile': 'Profile',
   'image.noImages': 'No images yet.',
   'image.generateError': 'Failed to generate image',
+
+  // SNS
+  'nav.manager': 'Manager',
+  'nav.sns': 'SNS',
+  'sns.feed': 'Feed',
+  'sns.emptyFeed': 'No posts yet.',
+  'sns.loadMore': 'Load More',
+  'sns.likes': 'Likes',
+  'sns.comments': 'Comments',
+  'sns.writeComment': 'Write a comment...',
+  'sns.post': 'Post',
+  'sns.deletePost': 'Delete',
+  'sns.deleteConfirm': 'Delete this post?',
+  'sns.follow': 'Follow',
+  'sns.unfollow': 'Unfollow',
+  'sns.followers': 'Followers',
+  'sns.following': 'Following',
+  'sns.posts': 'Posts',
+  'sns.back': 'Back',
+  'sns.noComments': 'No comments yet.',
+  'sns.reply': 'Reply',
 
   // Common
   'common.loading': 'Loading...',
