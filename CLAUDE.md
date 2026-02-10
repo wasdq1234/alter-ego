@@ -4,86 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Alter Ego — AI 인플루언서 플랫폼. 사용자가 AI 페르소나를 만들고 실시간 채팅하는 서비스.
+Alter Ego — AI 인플루언서 자율 활동 플랫폼. 사용자가 만든 AI 페르소나가 스스로 SNS에서 포스팅, 댓글, 좋아요, 팔로우 등의 활동을 하며, 과거 활동을 기억하고 경험을 쌓아가면서 점점 고유한 정체성과 자아를 형성해가는 서비스.
 
 ## Architecture
 
 모노레포 구조. `backend/`(FastAPI + LangGraph)와 `frontend/`(React + Vite)가 한 저장소에 존재.
 
-- **Backend**: FastAPI → `api/` 라우터들이 요청 처리 → `core/graph.py` LangGraph가 LLM 호출 → Supabase DB 저장
-- **Frontend**: React SPA → Supabase Auth로 직접 로그인 → JWT를 BE에 전달 → WebSocket으로 채팅 스트리밍
-- **DB/Auth**: Supabase (PostgreSQL + Auth + RLS). FE에서 `@supabase/supabase-js`, BE에서 `supabase-py` 사용
-- **Vite 프록시**: 개발 시 `/api` → `localhost:8000`, `/ws` → WebSocket 프록시 설정됨
+- **Backend**: FastAPI → `api/` 라우터 8개 → `core/` 비즈니스 로직 (LangGraph 채팅/활동 엔진, APScheduler, Replicate LoRA) → Supabase DB
+- **Frontend**: React SPA → Supabase Auth 직접 로그인 → JWT를 BE에 전달 → WebSocket 채팅 스트리밍
+- **DB/Auth**: Supabase (PostgreSQL + Auth + Storage + RLS)
+- **AI 엔진**: LangGraph StateGraph로 활동 결정 (포스팅/댓글/좋아요/팔로우), APScheduler로 자율 스케줄링
+- **이미지**: DALL-E 3 + Replicate LoRA로 캐릭터 일관성 있는 이미지 생성
 
 ## Commands
 
 ```bash
 # Backend
-cd backend && uv run uvicorn main:app --reload    # 개발 서버 (port 8000)
-cd backend && uv add <package>                     # 의존성 추가
-cd backend && uv sync                              # 의존성 설치
-
-# Test
-cd backend && uv run pytest tests/ -v              # 전체 테스트
-cd backend && uv run pytest tests/test_persona.py  # 단일 파일
-cd backend && uv run pytest -k "test_create"       # 키워드로 필터
+cd backend && uv run uvicorn main:app --reload       # 개발 서버 (port 8000)
+cd backend && uv add <package>                        # 의존성 추가
+cd backend && uv run pytest tests/ -v                 # 테스트
 
 # Frontend
-cd frontend && npm run dev                         # 개발 서버 (port 5173)
-cd frontend && npm run build                       # 프로덕션 빌드
-cd frontend && npm run lint                        # ESLint
-
-# E2E Test (Playwright)
-cd frontend && npx playwright test                 # 전체 E2E 테스트
-cd frontend && npx playwright test e2e/auth.spec.ts  # 단일 파일
-cd frontend && npx playwright test --ui            # UI 모드
-cd frontend && npx playwright test --reporter=list # 상세 출력
+cd frontend && npm run dev                            # 개발 서버 (port 5173)
+cd frontend && npm run build                          # 프로덕션 빌드
+cd frontend && npm run lint                           # ESLint
+cd frontend && npx playwright test                    # E2E 테스트
 ```
 
 ## Workflow Rules
 
 ### Task & Document Driven
 
-- **모든 작업은 Tasks와 `docs/` 문서 기반**으로 진행. 기획서(`docs/MVP_PLAN.md`)를 참조하고, 변경 사항이 있으면 문서를 먼저 업데이트.
+- **모든 작업은 Tasks와 `docs/` 문서 기반**으로 진행. 기획서(`docs/FULL_PLAN.md`)를 참조.
 - 새 기능이나 설계 변경 시 `docs/` 아래에 관련 문서를 생성 또는 수정하여 최신 상태 유지.
 
 ### Git Branch Strategy
 
-- **기능 개발 시 반드시 새 브랜치를 생성**하고 작업. 워크트리 방식을 따름.
-- 브랜치 네이밍: `feature/<task-number>-<short-description>` (예: `feature/3-auth-jwt`)
-- **`uv run pytest`가 전부 통과한 후에만 `main`에 머지**. 테스트 미완료 상태에서 머지 금지.
+- 기능 개발 시 반드시 새 브랜치 생성: `feature/<task-number>-<short-description>`
+- **`uv run pytest` 전체 통과 + `npm run build` + `npm run lint` 에러 0 확인 후에만 머지**.
 - 머지 전 PR 생성하여 변경 내용 문서화.
-
-```bash
-git checkout -b feature/<task-number>-<description>   # 브랜치 생성
-# ... 작업 및 테스트 ...
-git push -u origin feature/<task-number>-<description> # 푸시
-gh pr create                                           # PR 생성
-# 테스트 완료 확인 후 머지
-```
 
 ## Environment Variables
 
 Backend(`.env`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, `REPLICATE_API_TOKEN`
 Frontend(`.env`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
 
-## Documentation Reference (Context7)
-
-- 코드 작성 전 **반드시 Context7 MCP를 통해 최신 공식 문서를 확인**한 후 구현.
-- `resolve-library-id` → `query-docs` 순서로 호출하여 라이브러리별 최신 API/패턴 참조.
-- 주요 라이브러리 ID:
-  - LangGraph: `/langchain-ai/langgraph`
-  - LangChain: `/langchain-ai/langchain`
-  - FastAPI: `/websites/fastapi_tiangolo`
-  - Supabase Python: `/websites/supabase_reference_python`
-  - Supabase (전체): `/websites/supabase`
-  - React: `/facebook/react`
-
 ## Team Skills & Agents (팀 스킬 & 에이전트)
 
 팀 작업 시 `.claude/skills/`(공통 규칙)과 `.claude/agents/`(역할별 전문성)을 조합하여 사용한다.
+상세 컨벤션(코딩 규칙, Supabase 패턴, Context7 사용법, 테스트 규칙)은 skills 파일에 정의되어 있다.
 
-### Skills (공통 규칙 — 모든 팀원이 공유)
+### Skills (공통 규칙)
 
 | 파일 | 내용 |
 |------|------|
@@ -116,11 +87,3 @@ Frontend(`.env`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
 3. 에이전트 파일 + skills 파일을 읽고 prompt에 포함하여 팀원 spawn
 4. 팀원은 작업 완료 후 `TaskUpdate`로 상태 변경
 5. 모든 작업 완료 후 `test-engineer`로 QA 수행
-
-## Key Conventions
-
-- Backend 패키지 관리는 **uv** 사용 (`pyproject.toml` + `uv.lock`). pip/requirements.txt 사용 금지.
-- Frontend 스타일링은 **TailwindCSS v4** (`@import "tailwindcss"` 방식).
-- Supabase 테이블은 반드시 **RLS 활성화**. 모든 테이블에 `user_id` 기반 정책 적용.
-- BE API 인증: Supabase JWT → `Authorization: Bearer {token}` 헤더.
-- WebSocket 인증: 쿼리 파라미터 `?token={jwt}`.
