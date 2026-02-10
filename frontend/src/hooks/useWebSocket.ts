@@ -94,5 +94,7 @@ export function useWebSocket(token: string | undefined) {
 
   const clearMessages = useCallback(() => setMessages([]), [])
 
-  return { messages, isStreaming, connect, sendMessage, disconnect, clearMessages }
+  const loadMessages = useCallback((msgs: ChatMessage[]) => setMessages(msgs), [])
+
+  return { messages, isStreaming, connect, sendMessage, disconnect, clearMessages, loadMessages }
 }

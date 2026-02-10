@@ -19,12 +19,19 @@ class ThreadResponse(BaseModel):
     persona_id: str
 
 
+class MessageResponse(BaseModel):
+    id: str
+    role: str
+    content: str
+    created_at: str
+
+
 @router.post("/api/chat/thread", response_model=ThreadResponse, status_code=201)
-async def create_thread(
+async def find_or_create_thread(
     body: ThreadCreate,
     user: dict = Depends(get_current_user),
 ):
-    """채팅 스레드 생성. persona_id를 받아 chat_threads row를 만들고 thread ID 반환."""
+    """(user_id, persona_id) 기존 스레드 조회 → 있으면 반환, 없으면 생성."""
     sb = get_supabase()
 
     # 페르소나 소유권 확인
@@ -40,6 +47,18 @@ async def create_thread(
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Persona not found")
 
+    # 기존 스레드 조회
+    existing = (
+        sb.table("chat_threads")
+        .select("id, persona_id")
+        .eq("user_id", user["id"])
+        .eq("persona_id", body.persona_id)
+        .limit(1)
+        .execute()
+    )
+    if existing.data:
+        return existing.data[0]
+
     result = sb.table("chat_threads").insert({
         "user_id": user["id"],
         "persona_id": body.persona_id,
@@ -47,6 +66,38 @@ async def create_thread(
     }).execute()
 
     return result.data[0]
+
+
+@router.get("/api/chat/thread/{thread_id}/messages", response_model=list[MessageResponse])
+async def get_thread_messages(
+    thread_id: str,
+    user: dict = Depends(get_current_user),
+):
+    """스레드의 메시지 목록 반환. 소유권 확인 후 created_at 순 정렬."""
+    sb = get_supabase()
+
+    # 스레드 소유권 확인
+    thread = (
+        sb.table("chat_threads")
+        .select("id")
+        .eq("id", thread_id)
+        .eq("user_id", user["id"])
+        .limit(1)
+        .execute()
+    )
+    if not thread.data:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+    result = (
+        sb.table("chat_messages")
+        .select("id, role, content, created_at")
+        .eq("thread_id", thread_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+
+    return result.data
 
 
 async def _authenticate_ws(websocket: WebSocket) -> dict | None:

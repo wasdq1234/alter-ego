@@ -41,12 +41,11 @@ async def stream_chat(
     """페르소나 system_prompt + 유저 메시지로 스트리밍 응답 생성."""
     config = {"configurable": {"thread_id": thread_id}}
 
-    # 첫 메시지일 때만 system prompt 주입
-    state = await chat_graph.aget_state(config)
-    messages = []
-    if not state.values.get("messages"):
-        messages.append(SystemMessage(content=system_prompt))
-    messages.append({"role": "user", "content": user_message})
+    # 매 요청마다 최신 system prompt 주입 (페르소나 수정 즉시 반영)
+    messages = [
+        SystemMessage(content=system_prompt),
+        {"role": "user", "content": user_message},
+    ]
 
     async for event in chat_graph.astream_events(
         {"messages": messages},

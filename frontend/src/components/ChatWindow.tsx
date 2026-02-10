@@ -15,7 +15,7 @@ export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
   const [input, setInput] = useState('')
   const [threadId, setThreadId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const { messages, isStreaming, connect, sendMessage, disconnect } =
+  const { messages, isStreaming, connect, sendMessage, disconnect, loadMessages } =
     useWebSocket(token)
 
   useEffect(() => {
@@ -23,6 +23,7 @@ export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
 
     async function initThread() {
       try {
+        // find-or-create thread
         const res = await fetch('/api/chat/thread', {
           method: 'POST',
           headers: {
@@ -33,12 +34,24 @@ export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
         })
         if (!res.ok) throw new Error('Failed to create thread')
         const data = await res.json()
-        if (!cancelled) {
-          await connect(data.id)
-          if (!cancelled) setThreadId(data.id)
+        if (cancelled) return
+
+        // 이전 메시지 로딩
+        const msgRes = await fetch(`/api/chat/thread/${data.id}/messages`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (msgRes.ok) {
+          const history = await msgRes.json()
+          if (!cancelled && history.length > 0) {
+            loadMessages(history)
+          }
         }
+        if (cancelled) return
+
+        await connect(data.id)
+        if (!cancelled) setThreadId(data.id)
       } catch (err) {
-        console.error('Thread creation failed:', err)
+        console.error('Thread init failed:', err)
       }
     }
 

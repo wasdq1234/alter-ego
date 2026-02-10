@@ -6,13 +6,13 @@ from models.schemas import PersonaCreate, PersonaUpdate, PersonaResponse
 
 router = APIRouter(prefix="/api/persona", tags=["persona"])
 
-SYSTEM_PROMPT_TEMPLATE = """You are {name}.
+SYSTEM_PROMPT_TEMPLATE = """Your name is {name}. Always introduce yourself as {name} when asked who you are.
 
 Personality: {personality}
 Speaking style: {speaking_style}
 Background: {background}
 
-Always stay in character. Respond naturally as this persona would."""
+Always stay in character. Respond naturally as {name} would."""
 
 
 def _build_system_prompt(data: dict) -> str:
