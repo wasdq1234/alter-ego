@@ -156,9 +156,22 @@ function App() {
                 key={persona.id}
                 className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between hover:shadow-sm transition-shadow"
               >
-                <div>
-                  <h3 className="font-semibold text-gray-900">{persona.name}</h3>
-                  <p className="text-sm text-gray-500">{persona.personality}</p>
+                <div className="flex items-center gap-3">
+                  {persona.profile_image_url ? (
+                    <img
+                      src={persona.profile_image_url.startsWith('http') ? persona.profile_image_url : `${import.meta.env.VITE_API_URL || ''}${persona.profile_image_url}`}
+                      alt={persona.name}
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold flex-shrink-0">
+                      {persona.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{persona.name}</h3>
+                    <p className="text-sm text-gray-500">{persona.personality}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

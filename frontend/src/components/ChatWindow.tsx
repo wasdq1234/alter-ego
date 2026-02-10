@@ -81,6 +81,17 @@ export function ChatWindow({ persona, token, onBack }: ChatWindowProps) {
         <button onClick={onBack} className="text-gray-500 hover:text-gray-700">
           &larr;
         </button>
+        {persona.profile_image_url ? (
+          <img
+            src={persona.profile_image_url.startsWith('http') ? persona.profile_image_url : `${import.meta.env.VITE_API_URL || ''}${persona.profile_image_url}`}
+            alt={persona.name}
+            className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold flex-shrink-0">
+            {persona.name.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div>
           <h2 className="font-semibold text-gray-900">{persona.name}</h2>
           <p className="text-xs text-gray-500">{persona.personality}</p>

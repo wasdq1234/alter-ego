@@ -7,6 +7,17 @@ export interface Persona {
   background: string | null
   system_prompt: string | null
   created_at: string
+  profile_image_url?: string | null
+}
+
+export interface PersonaImage {
+  id: string
+  persona_id: string
+  file_path: string
+  prompt: string
+  is_profile: boolean
+  created_at: string
+  url: string
 }
 
 export interface ChatMessage {

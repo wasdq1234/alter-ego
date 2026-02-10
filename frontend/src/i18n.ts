@@ -49,6 +49,19 @@ const ko = {
   'chat.connecting': '연결 중...',
   'chat.send': '전송',
 
+  // Image
+  'image.title': '프로필 이미지',
+  'image.prompt': '이미지 프롬프트',
+  'image.promptPlaceholder': '생성할 이미지를 설명하세요...',
+  'image.generate': '이미지 생성',
+  'image.generating': '생성 중...',
+  'image.gallery': '이미지 갤러리',
+  'image.setProfile': '대표 설정',
+  'image.delete': '삭제',
+  'image.profile': '대표',
+  'image.noImages': '아직 이미지가 없습니다.',
+  'image.generateError': '이미지 생성에 실패했습니다',
+
   // Common
   'common.loading': '로딩 중...',
 } as const
@@ -103,6 +116,19 @@ const en: typeof ko = {
   'chat.placeholder': 'Type a message...',
   'chat.connecting': 'Connecting...',
   'chat.send': 'Send',
+
+  // Image
+  'image.title': 'Profile Image',
+  'image.prompt': 'Image Prompt',
+  'image.promptPlaceholder': 'Describe the image to generate...',
+  'image.generate': 'Generate Image',
+  'image.generating': 'Generating...',
+  'image.gallery': 'Image Gallery',
+  'image.setProfile': 'Set as Profile',
+  'image.delete': 'Delete',
+  'image.profile': 'Profile',
+  'image.noImages': 'No images yet.',
+  'image.generateError': 'Failed to generate image',
 
   // Common
   'common.loading': 'Loading...',

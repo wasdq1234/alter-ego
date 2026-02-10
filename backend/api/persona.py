@@ -6,6 +6,51 @@ from models.schemas import PersonaCreate, PersonaUpdate, PersonaResponse
 
 router = APIRouter(prefix="/api/persona", tags=["persona"])
 
+
+STORAGE_BUCKET = "persona-images"
+
+
+def _attach_profile_image(sb, persona: dict) -> dict:
+    """페르소나에 프로필 이미지 URL 부착."""
+    try:
+        result = (
+            sb.table("persona_images")
+            .select("file_path")
+            .eq("persona_id", persona["id"])
+            .eq("is_profile", True)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            persona["profile_image_url"] = sb.storage.from_(STORAGE_BUCKET).get_public_url(result.data[0]["file_path"])
+    except Exception:
+        pass
+    return persona
+
+
+def _attach_profile_images(sb, personas: list[dict]) -> list[dict]:
+    """여러 페르소나에 프로필 이미지 URL 일괄 부착."""
+    if not personas:
+        return personas
+    try:
+        persona_ids = [p["id"] for p in personas]
+        result = (
+            sb.table("persona_images")
+            .select("persona_id, file_path")
+            .in_("persona_id", persona_ids)
+            .eq("is_profile", True)
+            .execute()
+        )
+        image_map = {
+            row["persona_id"]: sb.storage.from_(STORAGE_BUCKET).get_public_url(row["file_path"])
+            for row in result.data
+        }
+        for p in personas:
+            p["profile_image_url"] = image_map.get(p["id"])
+    except Exception:
+        pass
+    return personas
+
 SYSTEM_PROMPT_TEMPLATE = """Your name is {name}. Always introduce yourself as {name} when asked who you are.
 
 Personality: {personality}
@@ -35,7 +80,7 @@ async def create_persona(
     row["system_prompt"] = _build_system_prompt(row)
 
     result = sb.table("personas").insert(row).execute()
-    return result.data[0]
+    return _attach_profile_image(sb, result.data[0])
 
 
 @router.get("", response_model=list[PersonaResponse])
@@ -48,7 +93,7 @@ async def list_personas(user: dict = Depends(get_current_user)):
         .order("created_at", desc=True)
         .execute()
     )
-    return result.data
+    return _attach_profile_images(sb, result.data)
 
 
 @router.get("/{persona_id}", response_model=PersonaResponse)
@@ -67,7 +112,7 @@ async def get_persona(
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Persona not found")
-    return result.data[0]
+    return _attach_profile_image(sb, result.data[0])
 
 
 @router.put("/{persona_id}", response_model=PersonaResponse)
@@ -104,7 +149,7 @@ async def update_persona(
         .eq("id", persona_id)
         .execute()
     )
-    return result.data[0]
+    return _attach_profile_image(sb, result.data[0])
 
 
 @router.delete("/{persona_id}", status_code=status.HTTP_204_NO_CONTENT)
