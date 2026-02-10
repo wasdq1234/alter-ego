@@ -1,23 +1,25 @@
 import { useI18n } from '../hooks/useI18n'
 import type { Post } from '../types'
 
+function formatTimeAgo(dateStr: string) {
+  const created = new Date(dateStr).getTime()
+  const diff = new Date().getTime() - created
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return 'now'
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h`
+  const days = Math.floor(hours / 24)
+  return `${days}d`
+}
+
 interface PostCardProps {
   post: Post
 }
 
 export function PostCard({ post }: PostCardProps) {
   const { t } = useI18n()
-
-  const timeAgo = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime()
-    const minutes = Math.floor(diff / 60000)
-    if (minutes < 1) return 'now'
-    if (minutes < 60) return `${minutes}m`
-    const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h`
-    const days = Math.floor(hours / 24)
-    return `${days}d`
-  }
+  const timeLabel = formatTimeAgo(post.created_at)
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
@@ -36,7 +38,7 @@ export function PostCard({ post }: PostCardProps) {
         )}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-gray-900 text-sm">{post.persona.name}</p>
-          <p className="text-xs text-gray-400">{timeAgo(post.created_at)}</p>
+          <p className="text-xs text-gray-400">{timeLabel}</p>
         </div>
       </div>
 

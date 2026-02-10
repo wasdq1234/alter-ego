@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 
@@ -7,7 +8,10 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from api.deps import get_current_user
+from core.image_gen import generate_lora_image, upload_image_to_storage
 from core.supabase_client import get_supabase
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/persona/{persona_id}/image", tags=["image"])
 
@@ -40,11 +44,11 @@ def _row_to_response(row: dict) -> ImageResponse:
     )
 
 
-def _verify_ownership(sb, persona_id: str, user_id: str):
-    """페르소나 소유권 확인."""
+def _get_persona(sb, persona_id: str, user_id: str) -> dict:
+    """페르소나 소유권 확인 및 데이터 반환."""
     result = (
         sb.table("personas")
-        .select("id")
+        .select("*")
         .eq("id", persona_id)
         .eq("user_id", user_id)
         .limit(1)
@@ -52,6 +56,51 @@ def _verify_ownership(sb, persona_id: str, user_id: str):
     )
     if not result.data:
         raise HTTPException(status_code=404, detail="Persona not found")
+    return result.data[0]
+
+
+async def _generate_with_lora(persona: dict, prompt: str) -> str:
+    """LoRA 모델로 이미지 생성 후 Storage에 업로드. file_path 반환."""
+    trigger = persona["lora_trigger_word"]
+    # 프롬프트에 trigger word가 없으면 앞에 자동 삽입
+    if trigger and trigger not in prompt:
+        prompt = f"{trigger} {prompt}"
+
+    image_urls = await generate_lora_image(
+        lora_model=persona["lora_model_id"],
+        prompt=prompt,
+    )
+    if not image_urls:
+        raise HTTPException(status_code=502, detail="LoRA image generation returned no results")
+
+    result = await upload_image_to_storage(
+        image_url=image_urls[0],
+        persona_id=persona["id"],
+        user_id=persona["user_id"],
+    )
+    return result["file_path"]
+
+
+async def _generate_with_dalle(prompt: str) -> bytes:
+    """DALL-E로 이미지 생성. 이미지 바이트 반환."""
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    try:
+        result = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            size="1024x1024",
+            n=1,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Image generation failed: {e}")
+
+    image_url = result.data[0].url
+
+    async with httpx.AsyncClient() as http:
+        resp = await http.get(image_url)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail="Failed to download generated image")
+        return resp.content
 
 
 @router.post("/generate", response_model=ImageResponse, status_code=status.HTTP_201_CREATED)
@@ -61,38 +110,32 @@ async def generate_image(
     user: dict = Depends(get_current_user),
 ):
     sb = get_supabase()
-    _verify_ownership(sb, persona_id, user["id"])
+    persona = _get_persona(sb, persona_id, user["id"])
 
-    # OpenAI DALL-E 이미지 생성
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-    try:
-        result = client.images.generate(
-            model="dall-e-3",
-            prompt=body.prompt,
-            size="1024x1024",
-            n=1,
+    use_lora = persona.get("lora_status") == "ready" and persona.get("lora_model_id")
+
+    if use_lora:
+        # LoRA 모델로 이미지 생성 + Storage 업로드 (image_gen 모듈 사용)
+        try:
+            file_name = await _generate_with_lora(persona, body.prompt)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("LoRA generation failed, falling back to DALL-E: %s", e)
+            use_lora = False
+
+    if not use_lora:
+        # DALL-E 폴백
+        image_bytes = await _generate_with_dalle(body.prompt)
+
+        file_id = str(uuid.uuid4())
+        file_name = f"images/{file_id}.png"
+
+        sb.storage.from_(BUCKET).upload(
+            path=file_name,
+            file=image_bytes,
+            file_options={"content-type": "image/png", "upsert": "false"},
         )
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Image generation failed: {e}")
-
-    image_url = result.data[0].url
-
-    # 이미지 다운로드
-    async with httpx.AsyncClient() as http:
-        resp = await http.get(image_url)
-        if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail="Failed to download generated image")
-        image_bytes = resp.content
-
-    # Supabase Storage에 업로드
-    file_id = str(uuid.uuid4())
-    file_name = f"images/{file_id}.png"
-
-    sb.storage.from_(BUCKET).upload(
-        path=file_name,
-        file=image_bytes,
-        file_options={"content-type": "image/png", "upsert": "false"},
-    )
 
     # 기존 프로필 이미지 존재 여부 확인
     existing = (
@@ -123,7 +166,7 @@ async def list_images(
     user: dict = Depends(get_current_user),
 ):
     sb = get_supabase()
-    _verify_ownership(sb, persona_id, user["id"])
+    _get_persona(sb, persona_id, user["id"])
 
     result = (
         sb.table("persona_images")
@@ -142,7 +185,7 @@ async def set_profile_image(
     user: dict = Depends(get_current_user),
 ):
     sb = get_supabase()
-    _verify_ownership(sb, persona_id, user["id"])
+    _get_persona(sb, persona_id, user["id"])
 
     # 대상 이미지 존재 확인
     target = (
@@ -178,7 +221,7 @@ async def delete_image(
     user: dict = Depends(get_current_user),
 ):
     sb = get_supabase()
-    _verify_ownership(sb, persona_id, user["id"])
+    _get_persona(sb, persona_id, user["id"])
 
     # 대상 이미지 확인
     target = (

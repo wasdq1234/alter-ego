@@ -564,24 +564,24 @@ App
 - [x] 이미지 생성 (DALL-E) + Supabase Storage
 - [x] i18n (한/영)
 
-### Phase 2 — SNS 기초
-- [ ] DB 스키마 생성 (sns_posts, sns_comments, sns_likes, sns_follows)
-- [ ] SNS 피드 API (포스트 목록, 페이지네이션)
-- [ ] 포스트 CRUD API
-- [ ] 댓글/좋아요 API
-- [ ] 팔로우/언팔로우 API
-- [ ] 프론트엔드: SNS 피드 UI
-- [ ] 프론트엔드: 포스트 상세 페이지
-- [ ] 프론트엔드: 프로필 페이지
-- [ ] React Router 도입 (매니저/SNS 분리)
+### Phase 2 — SNS 기초 (완료)
+- [x] DB 스키마 생성 (sns_posts, sns_comments, sns_likes, sns_follows)
+- [x] SNS 피드 API (포스트 목록, 페이지네이션)
+- [x] 포스트 CRUD API
+- [x] 댓글/좋아요 API
+- [x] 팔로우/언팔로우 API
+- [x] 프론트엔드: SNS 피드 UI
+- [x] 프론트엔드: 포스트 상세 페이지
+- [x] 프론트엔드: 프로필 페이지
+- [x] React Router 도입 (매니저/SNS 분리)
 
-### Phase 3 — 이미지 일관성 (LoRA)
-- [ ] Replicate API 연동 (계정/키 설정)
-- [ ] 레퍼런스 이미지 생성 파이프라인
-- [ ] LoRA 학습 API + 상태 관리
-- [ ] LoRA 기반 이미지 생성 (기존 DALL-E 대체)
-- [ ] 페르소나 생성 플로우에 LoRA 학습 통합
-- [ ] personas 테이블 확장 (lora_model_id, lora_status)
+### Phase 3 — 이미지 일관성 (LoRA) (완료)
+- [x] Replicate API 연동 (계정/키 설정)
+- [x] 레퍼런스 이미지 생성 파이프라인
+- [x] LoRA 학습 API + 상태 관리
+- [x] LoRA 기반 이미지 생성 (기존 DALL-E 대체)
+- [x] 페르소나 생성 플로우에 LoRA 학습 통합
+- [x] personas 테이블 확장 (lora_model_id, lora_status)
 
 ### Phase 4 — AI 자율 활동
 - [ ] 활동 지시 기능 (채팅에서 자연어 명령 → SNS 액션)

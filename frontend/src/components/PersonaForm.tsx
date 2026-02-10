@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import type { Persona, PersonaImage } from '../types'
 
@@ -25,7 +25,86 @@ export function PersonaForm({ token, persona, onSaved, onCancel }: PersonaFormPr
   const [generatingImage, setGeneratingImage] = useState(false)
   const [imageError, setImageError] = useState('')
 
+  // LoRA state
+  const [loraStatus, setLoraStatus] = useState<string>(persona?.lora_status ?? 'pending')
+  const [loraTriggerWord, setLoraTriggerWord] = useState<string>(persona?.lora_trigger_word ?? '')
+  const [loraModelId, setLoraModelId] = useState<string>(persona?.lora_model_id ?? '')
+  const [loraLoading, setLoraLoading] = useState(false)
+  const [loraError, setLoraError] = useState('')
+  const [loraSuccess, setLoraSuccess] = useState('')
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const apiUrl = import.meta.env.VITE_API_URL || ''
+
+  // Stop polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [])
+
+  const pollLoraStatus = useCallback(() => {
+    if (!persona) return
+    if (pollRef.current) clearInterval(pollRef.current)
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/persona/${persona.id}/lora/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        setLoraStatus(data.lora_status)
+        if (data.lora_model_id) setLoraModelId(data.lora_model_id)
+        if (data.lora_trigger_word) setLoraTriggerWord(data.lora_trigger_word)
+
+        if (data.lora_status === 'ready' || data.lora_status === 'failed') {
+          if (pollRef.current) clearInterval(pollRef.current)
+          pollRef.current = null
+          if (data.lora_status === 'ready') {
+            setLoraSuccess(t('lora.trainSuccess'))
+          }
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 10000)
+  }, [persona, apiUrl, token, t])
+
+  // Auto-start polling if status is already 'training'
+  useEffect(() => {
+    if (isEdit && loraStatus === 'training') {
+      pollLoraStatus()
+    }
+  }, [isEdit, loraStatus, pollLoraStatus])
+
+  const handleStartTraining = async () => {
+    if (!persona) return
+    setLoraLoading(true)
+    setLoraError('')
+    setLoraSuccess('')
+    try {
+      const res = await fetch(`${apiUrl}/api/persona/${persona.id}/lora/train`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.detail || t('lora.trainError'))
+      }
+      const data = await res.json()
+      setLoraStatus('training')
+      if (data.trigger_word) setLoraTriggerWord(data.trigger_word)
+      pollLoraStatus()
+    } catch (err) {
+      setLoraError(err instanceof Error ? err.message : t('lora.trainError'))
+    } finally {
+      setLoraLoading(false)
+    }
+  }
 
   // 기본 프롬프트 생성
   useEffect(() => {
@@ -295,6 +374,72 @@ export function PersonaForm({ token, persona, onSaved, onCancel }: PersonaFormPr
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* LoRA 학습 섹션 (수정 모드에서만) */}
+      {isEdit && (
+        <div className="mt-8 border-t pt-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('lora.title')}</h3>
+
+          {/* 상태 표시 */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm font-medium text-gray-700">{t('lora.statusLabel')}:</span>
+            {loraStatus === 'pending' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                {t('lora.statusPending')}
+              </span>
+            )}
+            {loraStatus === 'training' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {t('lora.statusTraining')}
+              </span>
+            )}
+            {loraStatus === 'ready' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                {t('lora.statusReady')}
+              </span>
+            )}
+            {loraStatus === 'failed' && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                {t('lora.statusFailed')}
+              </span>
+            )}
+          </div>
+
+          {/* 준비 완료 시 모델 정보 */}
+          {loraStatus === 'ready' && (loraTriggerWord || loraModelId) && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-sm space-y-1">
+              {loraTriggerWord && (
+                <p><span className="font-medium text-green-800">{t('lora.triggerWord')}:</span> <code className="bg-green-100 px-1 rounded">{loraTriggerWord}</code></p>
+              )}
+              {loraModelId && (
+                <p><span className="font-medium text-green-800">{t('lora.modelId')}:</span> <code className="bg-green-100 px-1 rounded text-xs">{loraModelId}</code></p>
+              )}
+            </div>
+          )}
+
+          {/* 이미지 부족 경고 */}
+          {images.length < 3 && (
+            <p className="text-sm text-amber-600 mb-3">{t('lora.needImages')}</p>
+          )}
+
+          {/* 학습 시작 버튼 */}
+          <button
+            type="button"
+            onClick={handleStartTraining}
+            disabled={loraLoading || loraStatus === 'training' || images.length < 3}
+            className="w-full py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loraLoading ? t('lora.training') : t('lora.startTraining')}
+          </button>
+
+          {loraError && <p className="text-sm text-red-600 mt-2">{loraError}</p>}
+          {loraSuccess && <p className="text-sm text-green-600 mt-2">{loraSuccess}</p>}
         </div>
       )}
     </div>
