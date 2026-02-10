@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../hooks/useI18n'
 import { PersonaForm } from '../components/PersonaForm'
 import { ChatWindow } from '../components/ChatWindow'
+import { ScheduleForm } from '../components/ScheduleForm'
+import { ActivityLog } from '../components/ActivityLog'
 import type { Persona } from '../types'
 
-type View = 'list' | 'create' | 'edit' | 'chat'
+type View = 'list' | 'create' | 'edit' | 'chat' | 'schedule' | 'activityLog'
 
 interface ManagerPageProps {
   token: string
@@ -88,6 +90,32 @@ export function ManagerPage({ token }: ManagerPageProps) {
     )
   }
 
+  if (view === 'schedule' && activePersona) {
+    return (
+      <ScheduleForm
+        token={token}
+        persona={activePersona}
+        onBack={() => {
+          setActivePersona(null)
+          setView('list')
+        }}
+      />
+    )
+  }
+
+  if (view === 'activityLog' && activePersona) {
+    return (
+      <ActivityLog
+        token={token}
+        persona={activePersona}
+        onBack={() => {
+          setActivePersona(null)
+          setView('list')
+        }}
+      />
+    )
+  }
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
@@ -145,6 +173,24 @@ export function ManagerPage({ token }: ManagerPageProps) {
                   className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
                 >
                   {t('persona.edit')}
+                </button>
+                <button
+                  onClick={() => {
+                    setActivePersona(persona)
+                    setView('schedule')
+                  }}
+                  className="px-3 py-1.5 border border-purple-300 rounded-md text-sm text-purple-600 hover:bg-purple-50"
+                >
+                  {t('schedule.title')}
+                </button>
+                <button
+                  onClick={() => {
+                    setActivePersona(persona)
+                    setView('activityLog')
+                  }}
+                  className="px-3 py-1.5 border border-amber-300 rounded-md text-sm text-amber-600 hover:bg-amber-50"
+                >
+                  {t('activityLog.title')}
                 </button>
                 <button
                   onClick={() => handleDelete(persona)}
