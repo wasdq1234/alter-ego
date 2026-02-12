@@ -19,6 +19,11 @@ export function PersonaForm({ token, persona, onSaved, onCancel }: PersonaFormPr
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // AI generate state
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState('')
+
   // Image state
   const [images, setImages] = useState<PersonaImage[]>([])
   const [imagePrompt, setImagePrompt] = useState('')
@@ -125,6 +130,32 @@ export function PersonaForm({ token, persona, onSaved, onCancel }: PersonaFormPr
       .catch(() => {})
   }, [isEdit, persona, token, apiUrl])
 
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) return
+    setGenerating(true)
+    setGenerateError('')
+    try {
+      const res = await fetch(`${apiUrl}/api/persona/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ prompt: aiPrompt.trim() }),
+      })
+      if (!res.ok) throw new Error(t('form.aiGenerateError'))
+      const data = await res.json()
+      setName(data.name)
+      setPersonality(data.personality)
+      setSpeakingStyle(data.speaking_style)
+      setBackground(data.background)
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : t('form.aiGenerateError'))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -218,6 +249,35 @@ export function PersonaForm({ token, persona, onSaved, onCancel }: PersonaFormPr
       <h2 className="text-xl font-bold text-gray-900 mb-4">
         {isEdit ? t('form.editTitle') : t('form.createTitle')}
       </h2>
+
+      {/* AI 자동 생성 섹션 (생성 모드에서만) */}
+      {!isEdit && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <label className="block text-sm font-medium text-blue-800 mb-2">{t('form.aiPrompt')}</label>
+          <textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder={t('form.aiPromptPlaceholder')}
+            rows={2}
+            className="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          />
+          <button
+            type="button"
+            onClick={handleAiGenerate}
+            disabled={generating || !aiPrompt.trim()}
+            className="mt-2 w-full py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {generating && (
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {generating ? t('form.aiGenerating') : t('form.aiGenerate')}
+          </button>
+          {generateError && <p className="text-sm text-red-600 mt-1">{generateError}</p>}
+        </div>
+      )}
 
       {/* 프로필 이미지 표시 */}
       {isEdit && (

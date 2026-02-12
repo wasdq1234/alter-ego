@@ -43,6 +43,11 @@ const ko = {
   'form.createError': '페르소나 생성에 실패했습니다',
   'form.updateError': '페르소나 수정에 실패했습니다',
   'form.error': '오류가 발생했습니다',
+  'form.aiPrompt': 'AI로 생성하기',
+  'form.aiPromptPlaceholder': '어떤 페르소나를 만들고 싶은지 설명해주세요 (예: 30대 게임 유튜버, 20대 패션 인플루언서)',
+  'form.aiGenerate': 'AI로 자동 생성',
+  'form.aiGenerating': '생성 중...',
+  'form.aiGenerateError': 'AI 생성에 실패했습니다',
 
   // Chat
   'chat.placeholder': '메시지를 입력하세요...',
@@ -197,6 +202,11 @@ const en: Record<keyof typeof ko, string> = {
   'form.createError': 'Failed to create persona',
   'form.updateError': 'Failed to update persona',
   'form.error': 'Error occurred',
+  'form.aiPrompt': 'Generate with AI',
+  'form.aiPromptPlaceholder': 'Describe the persona you want (e.g. 30s gaming YouTuber, 20s fashion influencer)',
+  'form.aiGenerate': 'Generate with AI',
+  'form.aiGenerating': 'Generating...',
+  'form.aiGenerateError': 'AI generation failed',
 
   // Chat
   'chat.placeholder': 'Type a message...',
