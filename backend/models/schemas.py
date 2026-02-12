@@ -1,6 +1,17 @@
 from pydantic import BaseModel
 
 
+class PersonaGenerate(BaseModel):
+    prompt: str
+
+
+class PersonaGenerateResponse(BaseModel):
+    name: str
+    personality: str
+    speaking_style: str
+    background: str
+
+
 class PersonaCreate(BaseModel):
     name: str
     personality: str

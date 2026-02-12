@@ -1,13 +1,49 @@
+import json
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from openai import OpenAI
 
 from api.deps import get_current_user
 from core.supabase_client import get_supabase
-from models.schemas import PersonaCreate, PersonaUpdate, PersonaResponse
+from models.schemas import (
+    PersonaCreate,
+    PersonaGenerate,
+    PersonaGenerateResponse,
+    PersonaUpdate,
+    PersonaResponse,
+)
 
 router = APIRouter(prefix="/api/persona", tags=["persona"])
 
 
 STORAGE_BUCKET = "persona-images"
+
+PERSONA_GENERATE_SYSTEM_PROMPT = """You are a creative AI persona designer. Given a short description, generate a detailed persona profile in JSON format with these fields:
+- name: A unique, memorable name that fits the persona
+- personality: Detailed personality traits (2-3 sentences)
+- speaking_style: How this persona talks, their tone and mannerisms (2-3 sentences)
+- background: Life story, interests, and context (2-3 sentences)
+
+Respond ONLY with a valid JSON object. Use the same language as the user's input."""
+
+
+@router.post("/generate", response_model=PersonaGenerateResponse)
+async def generate_persona(
+    body: PersonaGenerate,
+    user: dict = Depends(get_current_user),
+):
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": PERSONA_GENERATE_SYSTEM_PROMPT},
+            {"role": "user", "content": body.prompt},
+        ],
+    )
+    data = json.loads(response.choices[0].message.content)
+    return PersonaGenerateResponse(**data)
 
 
 def _attach_profile_image(sb, persona: dict) -> dict:
