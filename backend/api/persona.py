@@ -207,7 +207,7 @@ async def delete_persona(
     if not existing.data:
         raise HTTPException(status_code=404, detail="Persona not found")
 
-    # Storage 이미지 삭제
+    # Storage: 페르소나 이미지 삭제
     images = (
         sb.table("persona_images")
         .select("file_path")
@@ -217,6 +217,24 @@ async def delete_persona(
     if images.data:
         paths = [img["file_path"] for img in images.data]
         sb.storage.from_(STORAGE_BUCKET).remove(paths)
+
+    # Storage: SNS 포스트 이미지 삭제 (CASCADE 전에 처리)
+    posts = (
+        sb.table("sns_posts")
+        .select("image_file_path")
+        .eq("persona_id", persona_id)
+        .not_.is_("image_file_path", "null")
+        .execute()
+    )
+    if posts.data:
+        post_paths = [p["image_file_path"] for p in posts.data]
+        sb.storage.from_(STORAGE_BUCKET).remove(post_paths)
+
+    # Storage: LoRA 트레이닝 ZIP 삭제
+    lora_files = sb.storage.from_(STORAGE_BUCKET).list(f"lora-training/{persona_id}")
+    if lora_files:
+        lora_paths = [f"lora-training/{persona_id}/{f['name']}" for f in lora_files]
+        sb.storage.from_(STORAGE_BUCKET).remove(lora_paths)
 
     sb.table("personas").delete().eq("id", persona_id).execute()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
