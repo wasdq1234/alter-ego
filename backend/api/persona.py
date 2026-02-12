@@ -207,5 +207,16 @@ async def delete_persona(
     if not existing.data:
         raise HTTPException(status_code=404, detail="Persona not found")
 
+    # Storage 이미지 삭제
+    images = (
+        sb.table("persona_images")
+        .select("file_path")
+        .eq("persona_id", persona_id)
+        .execute()
+    )
+    if images.data:
+        paths = [img["file_path"] for img in images.data]
+        sb.storage.from_(STORAGE_BUCKET).remove(paths)
+
     sb.table("personas").delete().eq("id", persona_id).execute()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
