@@ -33,7 +33,7 @@ class PersonaResponse(BaseModel):
     personality: str
     speaking_style: str
     background: str | None
-    system_prompt: str | None
+    system_prompt: str | None = None
     created_at: str
     profile_image_url: str | None = None
 
