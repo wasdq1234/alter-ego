@@ -119,17 +119,28 @@ async def create_persona(
     return _attach_profile_image(sb, result.data[0])
 
 
+PERSONA_LIST_COLUMNS = (
+    "id, user_id, name, personality, speaking_style, background, created_at, "
+    "persona_images(file_path)"
+)
+
+
 @router.get("", response_model=list[PersonaResponse])
 async def list_personas(user: dict = Depends(get_current_user)):
     sb = get_supabase()
     result = (
         sb.table("personas")
-        .select("*")
+        .select(PERSONA_LIST_COLUMNS)
         .eq("user_id", user["id"])
+        .eq("persona_images.is_profile", True)
         .order("created_at", desc=True)
         .execute()
     )
-    return _attach_profile_images(sb, result.data)
+    for p in result.data:
+        images = p.pop("persona_images", [])
+        if images:
+            p["profile_image_url"] = sb.storage.from_(STORAGE_BUCKET).get_public_url(images[0]["file_path"])
+    return result.data
 
 
 @router.get("/{persona_id}", response_model=PersonaResponse)
